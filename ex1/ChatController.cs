@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Concurrent;
 
 namespace ex1;
 
@@ -7,7 +6,7 @@ namespace ex1;
 [Route("[controller]")]
 public class ChatController : ControllerBase
 {
-    private static readonly ConcurrentBag<Stream> Clients = new();
+    private static readonly List<Stream> Clients = new();
 
     [HttpGet("stream")]
     public async Task Stream()
@@ -18,14 +17,17 @@ public class ChatController : ControllerBase
 
         await Response.Body.FlushAsync();
 
-        Clients.Add(Response.Body);
+        lock (Clients)
+        {
+            Clients.Add(Response.Body);
+        }
+
+        var connectMessage = System.Text.Encoding.UTF8.GetBytes("data: Connected to chat\n\n");
+        await Response.Body.WriteAsync(connectMessage);
+        await Response.Body.FlushAsync();
 
         try
         {
-            var connectMessage = System.Text.Encoding.UTF8.GetBytes("data: Connected to chat\n\n");
-            await Response.Body.WriteAsync(connectMessage);
-            await Response.Body.FlushAsync();
-
             while (!HttpContext.RequestAborted.IsCancellationRequested)
             {
                 await Task.Delay(1000);
@@ -33,26 +35,37 @@ public class ChatController : ControllerBase
         }
         finally
         {
-            Clients.TryTake(out _);
+            lock (Clients)
+            {
+                Clients.Remove(Response.Body);
+            }
         }
     }
 
     [HttpPost("send")]
     public async Task<IActionResult> SendMessage([FromBody] Message message)
     {
-        var clientsSnapshot = Clients.ToArray();
+        var messageBytes = System.Text.Encoding.UTF8.GetBytes($"data: {message.Content}\n\n");
+
+        Stream[] clientsSnapshot;
+        lock (Clients)
+        {
+            clientsSnapshot = Clients.ToArray();
+        }
 
         foreach (var client in clientsSnapshot)
         {
             try
             {
-                var messageBytes = System.Text.Encoding.UTF8.GetBytes($"data: {message.Content}\n\n");
                 await client.WriteAsync(messageBytes);
                 await client.FlushAsync();
             }
             catch
             {
-                Clients.TryTake(out _);
+                lock (Clients)
+                {
+                    Clients.Remove(client);
+                }
             }
         }
 
