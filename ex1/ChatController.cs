@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ex1;
@@ -11,19 +12,10 @@ public class ChatController : ControllerBase
     [HttpGet("stream")]
     public async Task Stream()
     {
-        Response.Headers.Append("Content-Type", "text/event-stream");
-        Response.Headers.Append("Cache-Control", "no-cache");
-        Response.Headers.Append("Connection", "keep-alive");
+        Response.Headers.ContentType = "text/event-stream";
+        Response.Headers.CacheControl = "no-cache";
 
-        await Response.Body.FlushAsync();
-
-        lock (Clients)
-        {
-            Clients.Add(Response.Body);
-        }
-
-        var connectMessage = System.Text.Encoding.UTF8.GetBytes("data: Connected to chat\n\n");
-        await Response.Body.WriteAsync(connectMessage);
+        Clients.Add(Response.Body);
         await Response.Body.FlushAsync();
 
         try
@@ -35,25 +27,16 @@ public class ChatController : ControllerBase
         }
         finally
         {
-            lock (Clients)
-            {
-                Clients.Remove(Response.Body);
-            }
+            Clients.Remove(Response.Body);
         }
     }
 
     [HttpPost("send")]
-    public async Task<IActionResult> SendMessage([FromBody] Message message)
+    public async Task SendMessage([FromBody] Message message)
     {
-        var messageBytes = System.Text.Encoding.UTF8.GetBytes($"data: {message.Content}\n\n");
+        var messageBytes = Encoding.UTF8.GetBytes($"data: {message.Content}\n\n");
 
-        Stream[] clientsSnapshot;
-        lock (Clients)
-        {
-            clientsSnapshot = Clients.ToArray();
-        }
-
-        foreach (var client in clientsSnapshot)
+        foreach (var client in Clients.ToArray())
         {
             try
             {
@@ -62,13 +45,8 @@ public class ChatController : ControllerBase
             }
             catch
             {
-                lock (Clients)
-                {
-                    Clients.Remove(client);
-                }
+                Clients.Remove(client);
             }
         }
-
-        return Ok(new { sent = clientsSnapshot.Length });
     }
 }
