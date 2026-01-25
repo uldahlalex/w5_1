@@ -9,11 +9,18 @@ public class ChatController : ControllerBase
 {
     private static readonly List<Stream> Clients = new();
 
+
+    /// <summary>
+    /// how to test this: Connect to the stream with:
+    /// curl -N "http://localhost:5208/chat/stream" & sleep 20
+    ///
+    /// and then send the message with the other controller endpoint
+    /// </summary>
     [HttpGet("stream")]
     public async Task Stream()
     {
         Response.Headers.ContentType = "text/event-stream";
-        Response.Headers.CacheControl = "no-cache";
+        //Response.Headers.CacheControl = "no-cache";
 
         Clients.Add(Response.Body);
         await Response.Body.FlushAsync();
@@ -31,6 +38,15 @@ public class ChatController : ControllerBase
         }
     }
 
+
+    /**
+    How to test: First let some client connect to the stream endpoint above, then send a message to this one with:
+    
+    curl -X POST http://localhost:5208/chat/send \
+    -H "Content-Type: application/json" \
+    -d '{"Content":"Hello from curl!","GroupId":"room1"}'
+    
+     */
     [HttpPost("send")]
     public async Task SendMessage([FromBody] Message message)
     {

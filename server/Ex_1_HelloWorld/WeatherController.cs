@@ -6,11 +6,15 @@ namespace ex1;
 [Route("[controller]")]
 public class WeatherController : ControllerBase
 {
+    /// <summary>
+    /// Test it with:
+    /// curl -N "http://localhost:5208/weather/stream" & sleep 20
+    /// </summary>
     [HttpGet("stream")]
     public async Task Stream()
     {
         Response.Headers.ContentType = "text/event-stream";
-        Response.Headers.CacheControl = "no-cache";
+        // Response.Headers.CacheControl = "no-cache";
         
         while (true)
         {

@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react'
 const es = new EventSource("http://localhost:5208/chat/stream");
 
-function App() {
+export default function Ex3() {
   const [messages, setMessages] = useState<any[]>([])
 
     useEffect(() => {
@@ -31,4 +31,3 @@ function App() {
   )
 }
 
-export default App
