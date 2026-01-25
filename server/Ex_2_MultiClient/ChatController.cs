@@ -7,7 +7,7 @@ namespace ex1;
 [Route("[controller]")]
 public class ChatController : ControllerBase
 {
-    private static readonly List<Stream> Clients = new();
+    private static readonly List<System.IO.Stream> Clients = new();
 
 
     /// <summary>
@@ -20,11 +20,8 @@ public class ChatController : ControllerBase
     public async Task Stream()
     {
         Response.Headers.ContentType = "text/event-stream";
-        //Response.Headers.CacheControl = "no-cache";
-
         Clients.Add(Response.Body);
         await Response.Body.FlushAsync();
-
         try
         {
             while (!HttpContext.RequestAborted.IsCancellationRequested)
@@ -52,7 +49,7 @@ public class ChatController : ControllerBase
     {
         var messageBytes = Encoding.UTF8.GetBytes($"data: {message.Content}\n\n");
 
-        foreach (var client in Clients.ToArray())
+        foreach (var client in Clients)
         {
             try
             {

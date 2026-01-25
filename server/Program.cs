@@ -5,11 +5,13 @@ builder.Services.Configure<HostOptions>(options =>
 });
 builder.Services.AddControllers();
 builder.Services.AddCors();
+builder.Services.AddOpenApiDocument();
 
 var app = builder.Build();
 app.UseCors(_ => _.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().SetIsOriginAllowed(_ => true));
-
-
 app.MapControllers();
+app.UseOpenApi();
+app.UseSwaggerUi();
+
 
 app.Run();

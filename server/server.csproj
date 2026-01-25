@@ -7,12 +7,9 @@
     <RootNamespace>ex1</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="wwwroot\index.html" />
-  </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\" />
+    <PackageReference Include="NSwag.AspNetCore" Version="14.6.3" />
   </ItemGroup>
 
 </Project>
